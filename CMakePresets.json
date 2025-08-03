@@ -1,0 +1,21 @@
+{
+    "version": 9,
+    "cmakeMinimumRequired": {
+      "major": 3,
+      "minor": 20
+    },
+    "configurePresets": [
+        {
+            "name": "ninja-debug",
+            "displayName": "Ninja Debug",
+            "description": "Built using Ninja generator",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "installDir": "${sourceDir}/out/install/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "gcc"
+            }
+        }
+    ]
+}
