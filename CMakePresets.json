@@ -1,21 +1,31 @@
 {
-    "version": 9,
-    "cmakeMinimumRequired": {
-      "major": 3,
-      "minor": 20
+  "version": 9,
+  "configurePresets": [
+    {
+      "name": "ninja-common",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "installDir": "${sourceDir}/install/${presetName}"
     },
-    "configurePresets": [
-        {
-            "name": "ninja-debug",
-            "displayName": "Ninja Debug",
-            "description": "Built using Ninja generator",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "installDir": "${sourceDir}/out/install/${presetName}",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_C_COMPILER": "gcc"
-            }
-        }
-    ]
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "inherits": "ninja-common",
+      "description": "Debug build using Ninja generator",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "gcc"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "inherits": "ninja-common",
+      "description": "Release build using Ninja generator",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ]
 }

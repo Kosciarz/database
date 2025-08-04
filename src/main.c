@@ -5,7 +5,7 @@
 
 #include "input.h"
 
-void print_prompt()
+static void print_prompt()
 {
     printf("database> ");
 }

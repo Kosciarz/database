@@ -1,4 +1,9 @@
 .vscode/
+.vs/
+.idea/
 
 build/
 out/
+Testing/
+
+CMakeUserPresets.json
