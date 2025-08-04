@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "getline.h"
+
 typedef struct InputBuffer
 {
     char* buffer;

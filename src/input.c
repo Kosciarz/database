@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "third_party/getline/getline.h"
+#include "getline.h"
 
 InputBuffer* new_input_buffer()
 {
