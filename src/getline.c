@@ -33,7 +33,7 @@ ssize_t getline(char** lineptr, size_t* n, FILE* stream)
             if (new_size < MINIMUM_BUFFER_SIZE)
                 new_size = MINIMUM_BUFFER_SIZE;
 
-            // size_t wraparound
+            // check if size_t wraparound happened
             if (new_size <= *n)
                 return -1;
         
