@@ -5,4 +5,9 @@ set(SOURCES
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Werror -pedantic)
+
+if (MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /WA /W4)
+else ()
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Werror -pedantic)
+endif()
