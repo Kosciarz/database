@@ -10,7 +10,7 @@ InputBuffer* new_input_buffer()
     InputBuffer* input_buffer = malloc(sizeof(InputBuffer));
     if (input_buffer == NULL)
     {
-        perror("Malloc failed.\n");
+        perror("\nMalloc failed.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -31,7 +31,7 @@ void read_input(InputBuffer* input_buffer)
     ssize_t bytes_read = getline(&(input_buffer->buffer), &(input_buffer->buffer_length), stdin);
     if (bytes_read <= 0)
     {
-        perror("Error reading input\n");
+        perror("\nError reading input\n");
         exit(EXIT_FAILURE);
     }
 
