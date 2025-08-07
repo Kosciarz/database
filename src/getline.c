@@ -3,13 +3,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <errno.h>
 
 #define MINIMUM_BUFFER_SIZE 128
 
 ssize_t getline(char** lineptr, size_t* n, FILE* stream)
 {
     if (lineptr == NULL || n == NULL || stream == NULL)
+    {
+        errno = EINVAL;
         return -1;
+    }
     
     int ch = getc(stream);
     if (ch == EOF)
@@ -35,7 +39,10 @@ ssize_t getline(char** lineptr, size_t* n, FILE* stream)
 
             // check if size_t wraparound happened
             if (new_size <= *n)
+            {
+                errno = ENOMEM;
                 return -1;
+            }
         
             char* new_ptr = realloc(*lineptr, new_size);
             if (new_ptr == NULL)
