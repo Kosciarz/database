@@ -4,13 +4,14 @@
 #include <stdbool.h>
 
 #include "input.h"
+#include "parser.h"
 
-static void print_prompt()
+static void print_prompt(void)
 {
     printf("database> ");
 }
 
-int main()
+int main(void)
 {
     InputBuffer* input_buffer = new_input_buffer();
     while (true)
@@ -18,14 +19,29 @@ int main()
         print_prompt();
         read_input(input_buffer);
 
-        if (strcmp(input_buffer->buffer, "exit") == 0)
+        if (input_buffer->buffer[0] == '.')
         {
-            close_input_buffer(input_buffer);
-            exit(EXIT_SUCCESS);
+            switch (do_meta_command(input_buffer))
+            {
+            case META_COMMAND_SUCCESS:
+                break;
+            case META_COMMAND_UNRECOGNIZED_COMMAND:
+                fprintf(stderr, "Unrecognized command '%s'\n", input_buffer->buffer);
+                break;
+            }
         }
-        else
+
+        Statement statement = {0};
+        switch (prepare_statement(input_buffer, &statement))
         {
-            printf("Unrecognised command '%s'.\n", input_buffer->buffer);
+        case PREPARE_SUCCESS:
+            break;
+        case PREPARE_UNRECOGNIZED_STATEMENT:
+            fprintf(stderr, "Unrecongnized keyword at start of '%s'\n", input_buffer->buffer);
+            break;
         }
+
+        execute_statement(&statement);
+        printf("Executed.\n");
     }
 }
