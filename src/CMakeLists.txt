@@ -1,7 +1,7 @@
 set(SOURCES
     "input.c"
     "getline.c"
-    "getline.h"
+    "parser.c"
 )
 
 add_library(db_core STATIC ${SOURCES})
