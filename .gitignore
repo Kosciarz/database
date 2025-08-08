@@ -2,8 +2,6 @@
 .vs/
 .idea/
 
-build/
-out/
-Testing/
+*build*/
 
 CMakeUserPresets.json

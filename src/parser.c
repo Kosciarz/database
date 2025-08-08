@@ -9,9 +9,14 @@
 MetaCommandResult do_meta_command(InputBuffer* input_buffer)
 {
     if (strcmp(input_buffer->buffer, ".exit") == 0)
+    {
+        close_input_buffer(input_buffer);
         exit(EXIT_SUCCESS);
+    }
     else
+    {
         return META_COMMAND_UNRECOGNIZED_COMMAND;
+    }
 }
 
 PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
@@ -34,10 +39,10 @@ void execute_statement(Statement* statement)
     switch (statement->type)
     {
     case STATEMENT_INSERT:
-        printf("This is where we would do an insert");
+        printf("This is where we would do an insert.\n");
         break;
     case STATEMENT_SELECT:
-        printf("This is where we would do an insert");
+        printf("This is where we would do a select.\n");
         break;
     }
 }

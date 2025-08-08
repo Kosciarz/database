@@ -68,8 +68,6 @@ static void handles_valid_statement(void)
     close_input_buffer(input_buffer2);
 }
 
-
-
 int main(void)
 {
     UNITY_BEGIN();

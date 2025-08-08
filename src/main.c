@@ -24,21 +24,21 @@ int main(void)
             switch (do_meta_command(input_buffer))
             {
             case META_COMMAND_SUCCESS:
-                break;
+                continue;
             case META_COMMAND_UNRECOGNIZED_COMMAND:
                 fprintf(stderr, "Unrecognized command '%s'\n", input_buffer->buffer);
-                break;
+                continue;
             }
         }
 
-        Statement statement = {0};
+        Statement statement;
         switch (prepare_statement(input_buffer, &statement))
         {
         case PREPARE_SUCCESS:
             break;
         case PREPARE_UNRECOGNIZED_STATEMENT:
             fprintf(stderr, "Unrecongnized keyword at start of '%s'\n", input_buffer->buffer);
-            break;
+            continue;
         }
 
         execute_statement(&statement);
