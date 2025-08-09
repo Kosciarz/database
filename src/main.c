@@ -6,6 +6,7 @@
 #include "input.h"
 #include "parser.h"
 
+
 static void print_prompt(void)
 {
     printf("database> ");
@@ -38,6 +39,9 @@ int main(void)
             break;
         case PREPARE_UNRECOGNIZED_STATEMENT:
             fprintf(stderr, "Unrecongnized keyword at start of '%s'\n", input_buffer->buffer);
+            continue;
+        case PREPARE_SYNTAX_ERROR:
+            fprintf(stderr, "Syntax error in the command '%s'\n", input_buffer->buffer);
             continue;
         }
 
