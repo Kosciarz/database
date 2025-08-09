@@ -25,7 +25,7 @@ static void test_new_buffer_is_empty(void)
 	TEST_ASSERT_EQUAL_INT(input_buffer->buffer_length, 0);
 	TEST_ASSERT_EQUAL_INT(input_buffer->input_length, 0);
 
-	close_input_buffer(input_buffer);
+	free_input_buffer(input_buffer);
 }
 
 // redefining the function overshadows the getline.c definition
@@ -50,7 +50,7 @@ static void test_reads_input(void) {
 	TEST_ASSERT_EQUAL_STRING("test input", input_buffer->buffer);
 	TEST_ASSERT_EQUAL_INT(10, input_buffer->input_length);
 
-	close_input_buffer(input_buffer);
+	free_input_buffer(input_buffer);
 }
 
 int main(void)

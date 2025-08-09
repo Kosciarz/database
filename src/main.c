@@ -14,7 +14,9 @@ static void print_prompt(void)
 
 int main(void)
 {
+    Table* table = new_table();
     InputBuffer* input_buffer = new_input_buffer();
+
     while (true)
     {
         print_prompt();
@@ -37,15 +39,25 @@ int main(void)
         {
         case PREPARE_SUCCESS:
             break;
-        case PREPARE_UNRECOGNIZED_STATEMENT:
-            fprintf(stderr, "Unrecongnized keyword at start of '%s'\n", input_buffer->buffer);
-            continue;
         case PREPARE_SYNTAX_ERROR:
-            fprintf(stderr, "Syntax error in the command '%s'\n", input_buffer->buffer);
+            fprintf(stderr, "Syntax error. Could not parse statement.\n");
+            continue;
+        case PREPARE_UNRECOGNIZED_STATEMENT:
+            fprintf(stderr, "Unrecongnized keyword at start of '%s'.\n", input_buffer->buffer);
             continue;
         }
 
-        execute_statement(&statement);
-        printf("Executed.\n");
+        switch (execute_statement(&statement, table))
+        {
+        case EXECUTE_SUCCESS:
+            printf("Executed.\n");
+            break;
+        case EXECUTE_TABLE_FULL:
+            fprintf(stderr, "Error: Table full.\n");
+            break;
+        }
     }
+
+    free_table(table);
+    free_input_buffer(input_buffer);
 }

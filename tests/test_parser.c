@@ -41,7 +41,7 @@ static void handles_unrecognized_meta_command(void)
     InputBuffer* input_buffer = create_input_buffer_with_data("");
 
     TEST_ASSERT_EQUAL_INT(META_COMMAND_UNRECOGNIZED_COMMAND, do_meta_command(input_buffer));
-    close_input_buffer(input_buffer);
+    free_input_buffer(input_buffer);
 }
 
 static void handles_unrecognized_statement(void)
@@ -50,7 +50,7 @@ static void handles_unrecognized_statement(void)
     Statement statement;
 
     TEST_ASSERT_EQUAL_INT(PREPARE_UNRECOGNIZED_STATEMENT, prepare_statement(input_buffer, &statement));
-    close_input_buffer(input_buffer);
+    free_input_buffer(input_buffer);
 }
 
 static void handles_valid_statement(void)
@@ -60,12 +60,12 @@ static void handles_valid_statement(void)
     InputBuffer* input_buffer1 = create_input_buffer_with_data("insert foo bar");
     TEST_ASSERT_EQUAL_INT(PREPARE_SUCCESS, prepare_statement(input_buffer1, &statement));
     TEST_ASSERT_EQUAL_INT(STATEMENT_INSERT, statement.type);
-    close_input_buffer(input_buffer1);
+    free_input_buffer(input_buffer1);
 
     InputBuffer* input_buffer2 = create_input_buffer_with_data("select");
     TEST_ASSERT_EQUAL_INT(PREPARE_SUCCESS, prepare_statement(input_buffer2, &statement));
     TEST_ASSERT_EQUAL_INT(STATEMENT_SELECT, statement.type);
-    close_input_buffer(input_buffer2);
+    free_input_buffer(input_buffer2);
 }
 
 int main(void)

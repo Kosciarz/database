@@ -37,9 +37,9 @@ typedef struct {
 #define USERNAME_SIZE SIZE_OF_ATTRIBUTE(Row, username)
 #define EMAIL_SIZE SIZE_OF_ATTRIBUTE(Row, email)
 #define ID_OFFSET 0
-#define USERNAME_OFFSET ID_OFFSET + ID_SIZE
-#define EMAIL_OFFSET USERNAME_OFFSET + USERNAME_SIZE
-#define ROW_SIZE ID_SIZE + USERNAME_SIZE + EMAIL_SIZE
+#define USERNAME_OFFSET (ID_OFFSET + ID_SIZE)
+#define EMAIL_OFFSET (USERNAME_OFFSET + USERNAME_SIZE)
+#define ROW_SIZE (ID_SIZE + USERNAME_SIZE + EMAIL_SIZE)
 
 void serialize_row(Row* source, void* destination);
 void deserialize_row(void* source, Row* destination);
@@ -54,6 +54,9 @@ typedef struct {
     void* pages[TABLE_MAX_PAGES];
 } Table;
 
+Table* new_table(void);
+void free_table(Table* table);
+
 void* row_slot(Table* table, uint32_t row_num);
 
 typedef struct {
@@ -63,6 +66,15 @@ typedef struct {
 
 MetaCommandResult do_meta_command(InputBuffer* input_buffer);
 PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement);
-void execute_statement(Statement* statement);
+
+
+typedef enum {
+    EXECUTE_SUCCESS,
+    EXECUTE_TABLE_FULL
+} ExecuteResult;
+
+ExecuteResult execute_statement(Statement* statement, Table* table);
+ExecuteResult execute_insert(Statement* statement, Table* table);
+ExecuteResult execute_select(Statement* statement, Table* table);
 
 #endif // PARSER_H
