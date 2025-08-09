@@ -24,7 +24,7 @@ int main(void)
 
         if (input_buffer->buffer[0] == '.')
         {
-            switch (do_meta_command(input_buffer))
+            switch (do_meta_command(input_buffer, table))
             {
             case META_COMMAND_SUCCESS:
                 continue;
@@ -55,9 +55,9 @@ int main(void)
         case EXECUTE_TABLE_FULL:
             fprintf(stderr, "Error: Table full.\n");
             break;
+        case EXECUTE_ID_NOT_FOUND:
+            fprintf(stderr, "Error: Row id %d not found.\n", statement.id_to_delete);
+            break;
         }
     }
-
-    free_table(table);
-    free_input_buffer(input_buffer);
 }

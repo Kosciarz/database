@@ -68,11 +68,12 @@ static void print_row(Row* row)
     printf("(%d, %s, %s)\n", row->id, row->username, row->email);
 }
 
-MetaCommandResult do_meta_command(InputBuffer* input_buffer)
+MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table)
 {
     if (strcmp(input_buffer->buffer, ".exit") == 0)
     {
         free_input_buffer(input_buffer);
+        free_table(table);
         exit(EXIT_SUCCESS);
     }
     else
@@ -86,7 +87,7 @@ PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
     if (strncmp(input_buffer->buffer, "insert", 6) == 0)
     {
         statement->type = STATEMENT_INSERT;
-        const int args_assigned = sscanf(input_buffer->buffer, "insert %d %32s %255s",
+        int args_assigned = sscanf(input_buffer->buffer, "insert %d %32s %255s",
             (int*)(&(statement->row_to_insert.id)), statement->row_to_insert.username, statement->row_to_insert.email);
         return args_assigned < 3 ? PREPARE_SYNTAX_ERROR : PREPARE_SUCCESS;
     }
@@ -94,6 +95,13 @@ PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
     {
         statement->type = STATEMENT_SELECT;
         return PREPARE_SUCCESS;
+    }
+    if (strncmp(input_buffer->buffer, "delete", 6) == 0)
+    {
+        statement->type = STATEMENT_DELETE;
+        int args_assigned = sscanf(input_buffer->buffer, "delete %d",
+            (int*)(&(statement->id_to_delete)));
+        return args_assigned < 1 ? PREPARE_SYNTAX_ERROR : PREPARE_SUCCESS;
     }
     return PREPARE_UNRECOGNIZED_STATEMENT;
 }
@@ -106,6 +114,8 @@ ExecuteResult execute_statement(Statement* statement, Table* table)
         return execute_insert(statement, table);
     case STATEMENT_SELECT:
         return execute_select(statement, table);
+    case STATEMENT_DELETE:
+        return execute_delete(statement, table);
     }
 
     return 0;
@@ -131,4 +141,19 @@ ExecuteResult execute_select(Statement* statement, Table* table)
         print_row(&row);
     }
     return EXECUTE_SUCCESS;
+}
+
+ExecuteResult execute_delete(Statement* statement, Table* table)
+{
+    Row row;
+    for (uint32_t i = 0; i < table->num_rows; ++i)
+    {
+        deserialize_row(row_slot(table, i), &row);
+        if (row.id == statement->id_to_delete)
+        {
+            memset(row_slot(table, i), 0, ROW_SIZE);
+            return EXECUTE_SUCCESS;
+        }
+    }
+    return EXECUTE_ID_NOT_FOUND;
 }
