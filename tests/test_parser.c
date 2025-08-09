@@ -39,9 +39,12 @@ static InputBuffer* create_input_buffer_with_data(const char* data)
 static void handles_unrecognized_meta_command(void)
 {
     InputBuffer* input_buffer = create_input_buffer_with_data("");
+    Table* table = new_table();
 
-    TEST_ASSERT_EQUAL_INT(META_COMMAND_UNRECOGNIZED_COMMAND, do_meta_command(input_buffer));
+    TEST_ASSERT_EQUAL_INT(META_COMMAND_UNRECOGNIZED_COMMAND, do_meta_command(input_buffer, table));
+
     free_input_buffer(input_buffer);
+    free(table);
 }
 
 static void handles_unrecognized_statement(void)
@@ -50,6 +53,7 @@ static void handles_unrecognized_statement(void)
     Statement statement;
 
     TEST_ASSERT_EQUAL_INT(PREPARE_UNRECOGNIZED_STATEMENT, prepare_statement(input_buffer, &statement));
+
     free_input_buffer(input_buffer);
 }
 
@@ -57,7 +61,7 @@ static void handles_valid_statement(void)
 {
     Statement statement;
 
-    InputBuffer* input_buffer1 = create_input_buffer_with_data("insert foo bar");
+    InputBuffer* input_buffer1 = create_input_buffer_with_data("insert 1 foo foo@foo.com");
     TEST_ASSERT_EQUAL_INT(PREPARE_SUCCESS, prepare_statement(input_buffer1, &statement));
     TEST_ASSERT_EQUAL_INT(STATEMENT_INSERT, statement.type);
     free_input_buffer(input_buffer1);
