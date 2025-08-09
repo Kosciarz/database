@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
+#include <stdbool.h>
 
 #include "input.h"
 
@@ -132,13 +132,22 @@ ExecuteResult execute_insert(Statement* statement, Table* table)
     return EXECUTE_SUCCESS;
 }
 
+bool is_valid_row(void* row)
+{
+    static const char test_block[ROW_SIZE] = {0};
+    return memcmp(test_block, row, ROW_SIZE);
+}
+
 ExecuteResult execute_select(Statement* statement, Table* table)
 {
     Row row;
     for (uint32_t i = 0; i < table->num_rows; ++i)
     {
-        deserialize_row(row_slot(table, i), &row);
-        print_row(&row);
+        if (is_valid_row(row_slot(table, i)))
+        {
+            deserialize_row(row_slot(table, i), &row);
+            print_row(&row);
+        }
     }
     return EXECUTE_SUCCESS;
 }
