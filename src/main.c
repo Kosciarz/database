@@ -34,16 +34,22 @@ int main(void)
             }
         }
 
-        Statement statement;
+        Statement statement = {0};
         switch (prepare_statement(input_buffer, &statement))
         {
         case PREPARE_SUCCESS:
             break;
+        case PREPARE_NEGATIVE_ID:
+            fprintf(stderr, "Error: ID must be positive.\n");
+            break;
+        case PREPARE_STRING_TOO_LONG:
+            fprintf(stderr, "Error: String is too long.\n");
+            break;
         case PREPARE_SYNTAX_ERROR:
-            fprintf(stderr, "Syntax error. Could not parse statement.\n");
+            fprintf(stderr, "Error: Could not parse statement.\n");
             continue;
         case PREPARE_UNRECOGNIZED_STATEMENT:
-            fprintf(stderr, "Unrecongnized keyword at start of '%s'.\n", input_buffer->buffer);
+            fprintf(stderr, "Error: Unrecongnized keyword at start of '%s'.\n", input_buffer->buffer);
             continue;
         }
 

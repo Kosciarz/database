@@ -82,14 +82,14 @@ MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table)
     }
 }
 
+static PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement);
+static PrepareResult prepare_delete(InputBuffer* input_buffer, Statement* statement);
+
 PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
 {
     if (strncmp(input_buffer->buffer, "insert", 6) == 0)
     {
-        statement->type = STATEMENT_INSERT;
-        int args_assigned = sscanf(input_buffer->buffer, "insert %d %32s %255s",
-            (int*)(&(statement->row_to_insert.id)), statement->row_to_insert.username, statement->row_to_insert.email);
-        return args_assigned < 3 ? PREPARE_SYNTAX_ERROR : PREPARE_SUCCESS;
+        return prepare_insert(input_buffer, statement);
     }
     if (strcmp(input_buffer->buffer, "select") == 0)
     {
@@ -98,12 +98,54 @@ PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
     }
     if (strncmp(input_buffer->buffer, "delete", 6) == 0)
     {
-        statement->type = STATEMENT_DELETE;
-        int args_assigned = sscanf(input_buffer->buffer, "delete %d",
-            (int*)(&(statement->id_to_delete)));
-        return args_assigned < 1 ? PREPARE_SYNTAX_ERROR : PREPARE_SUCCESS;
+        return prepare_delete(input_buffer, statement);
     }
+
     return PREPARE_UNRECOGNIZED_STATEMENT;
+}
+
+static PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement)
+{
+    char* keyword = strtok(input_buffer->buffer, " ");
+    char* id_string = strtok(NULL, " ");
+    char* username = strtok(NULL, " ");
+    char* email = strtok(NULL, " ");
+
+    if (!id_string || !username || !email)
+        return PREPARE_SYNTAX_ERROR;
+
+    int id = atoi(id_string);
+
+    if (id < 0)
+        return PREPARE_NEGATIVE_ID;
+    if (strlen(username) > COLUMN_USERNAME_SIZE)
+        return PREPARE_STRING_TOO_LONG;
+    if (strlen(email) > COLUMN_EMAIL_SIZE)
+        return PREPARE_STRING_TOO_LONG;
+
+    statement->type = STATEMENT_INSERT;
+    statement->row_to_insert.id = id;
+    strcpy(statement->row_to_insert.username, username);
+    strcpy(statement->row_to_insert.email, email);
+
+    return PREPARE_SUCCESS;
+}
+
+static PrepareResult prepare_delete(InputBuffer* input_buffer, Statement* statement)
+{
+    char* keyword = strtok(input_buffer->buffer, " ");
+    char* id_string = strtok(input_buffer->buffer, " ");
+
+    if (!id_string)
+        return PREPARE_SYNTAX_ERROR;
+
+    int id = atoi(id_string);
+    if (id < 0)
+        return PREPARE_NEGATIVE_ID;
+
+    statement->type = STATEMENT_DELETE;
+    statement->id_to_delete = id;
+    return PREPARE_SUCCESS;
 }
 
 ExecuteResult execute_statement(Statement* statement, Table* table)
@@ -132,7 +174,7 @@ ExecuteResult execute_insert(Statement* statement, Table* table)
     return EXECUTE_SUCCESS;
 }
 
-bool is_valid_row(void* row)
+static bool is_valid_row(void* row)
 {
     static const char test_block[ROW_SIZE] = {0};
     return memcmp(test_block, row, ROW_SIZE);
