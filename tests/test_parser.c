@@ -154,6 +154,16 @@ static void handles_maximum_insert_input_sizes(void)
     free_table(table);
 }
 
+static void handles_invalid_insert_input(void)
+{
+    TEST_ASSERT_TRUE(0);
+}
+
+static void handles_invalid_delete_input(void)
+{
+    TEST_ASSERT_TRUE(0);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -164,5 +174,7 @@ int main(void)
     RUN_TEST(handles_select_command);
     RUN_TEST(handles_delete_command);
     RUN_TEST(handles_maximum_insert_input_sizes);
+    RUN_TEST(handles_invalid_insert_input);
+    RUN_TEST(handles_invalid_delete_input);
     return UNITY_END();
 }
