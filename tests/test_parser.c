@@ -72,11 +72,97 @@ static void handles_valid_statement(void)
     free_input_buffer(input_buffer2);
 }
 
+static void handles_insert_command(void)
+{
+    Table* table = new_table();
+
+    Statement statement1 = {0};
+    statement1.row_to_insert.id = 1;
+    strcpy(statement1.row_to_insert.username, "person1");
+    strcpy(statement1.row_to_insert.email, "person1@example.com");
+   
+    TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_insert(&statement1, table));
+    TEST_ASSERT_EQUAL_INT(1, table->num_rows);
+
+    Statement statement2 = {0};
+    statement2.type = STATEMENT_INSERT;
+    statement2.row_to_insert.id = 1;
+    strcpy(statement2.row_to_insert.username, "person2");
+    strcpy(statement2.row_to_insert.email, "person2@example.com");
+
+    TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_insert(&statement2, table));
+    TEST_ASSERT_EQUAL_INT(2, table->num_rows);
+    
+    free_table(table);
+}
+
+static void handles_select_command(void)
+{
+    Table* table = new_table();
+
+    Statement insert_statement = {0};
+    insert_statement.row_to_insert.id = 1;
+    strcpy(insert_statement.row_to_insert.username, "person1");
+    strcpy(insert_statement.row_to_insert.email, "person1@example.com");
+    execute_insert(&insert_statement, table);
+
+    Statement select_statement = {0};
+
+    TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_select(&select_statement, table));
+
+    free_table(table);
+}
+
+static void handles_delete_command(void)
+{
+    Table* table = new_table();
+
+    Statement insert_statement = {0};
+    insert_statement.row_to_insert.id = 1;
+    strcpy(insert_statement.row_to_insert.username, "person1");
+    strcpy(insert_statement.row_to_insert.email, "person1@example.com");
+    execute_insert(&insert_statement, table);
+
+    Statement delete_statement = {0};
+    delete_statement.id_to_delete = 1;
+    static const char test_block[ROW_SIZE] = {0};
+
+    TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_delete(&delete_statement, table));
+    TEST_ASSERT_EQUAL_INT(0, memcmp(test_block, row_slot(table, insert_statement.id_to_delete), ROW_SIZE));
+
+    free_table(table);
+}
+
+static void handles_maximum_insert_input_sizes(void)
+{
+    Table* table = new_table();
+
+    Statement insert_statement = {0};
+    insert_statement.row_to_insert.id = 1;
+    memset(insert_statement.row_to_insert.username, 'a', COLUMN_USERNAME_SIZE);
+    insert_statement.row_to_insert.username[COLUMN_USERNAME_SIZE] = '\0';
+    memset(insert_statement.row_to_insert.email, 'a', COLUMN_EMAIL_SIZE);
+    insert_statement.row_to_insert.email[COLUMN_EMAIL_SIZE] = '\0';
+    execute_insert(&insert_statement, table);
+
+    Row row;
+    deserialize_row(row_slot(table, 0), &row);
+
+    TEST_ASSERT_EQUAL_INT(COLUMN_USERNAME_SIZE, strlen(row.username));
+    TEST_ASSERT_EQUAL_INT(COLUMN_EMAIL_SIZE, strlen(row.email));
+    
+    free_table(table);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(handles_unrecognized_meta_command);
     RUN_TEST(handles_unrecognized_statement);
     RUN_TEST(handles_valid_statement);
+    RUN_TEST(handles_insert_command);
+    RUN_TEST(handles_select_command);
+    RUN_TEST(handles_delete_command);
+    RUN_TEST(handles_maximum_insert_input_sizes);
     return UNITY_END();
 }
