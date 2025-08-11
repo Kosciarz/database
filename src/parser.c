@@ -39,8 +39,9 @@ Table* new_table(void)
 
 void free_table(Table* table)
 {
-    for (uint32_t i = 0; table->pages[i] != NULL; ++i)
-        free(table->pages[i]);
+    for (uint32_t i = 0; i < TABLE_MAX_PAGES; ++i)
+        if (table->pages[i] != NULL)
+            free(table->pages[i]);
     free(table);
 }
 
@@ -134,12 +135,13 @@ static PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statem
 static PrepareResult prepare_delete(InputBuffer* input_buffer, Statement* statement)
 {
     char* keyword = strtok(input_buffer->buffer, " ");
-    char* id_string = strtok(input_buffer->buffer, " ");
+    char* id_string = strtok(NULL, " ");
 
     if (!id_string)
         return PREPARE_SYNTAX_ERROR;
 
     int id = atoi(id_string);
+
     if (id < 0)
         return PREPARE_NEGATIVE_ID;
 
