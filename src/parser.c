@@ -1,73 +1,24 @@
 #include "parser.h"
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 
 #include "input.h"
 
-void serialize_row(Row* source, void* destination)
-{
-    memcpy((uint8_t*)(destination) + ID_OFFSET, &(source->id), ID_SIZE);
-    memcpy((uint8_t*)(destination) + USERNAME_OFFSET, &(source->username), USERNAME_SIZE);
-    memcpy((uint8_t*)(destination) + EMAIL_OFFSET, &(source->email), EMAIL_SIZE);
-}
 
-void deserialize_row(void* source, Row* destination)
-{
-    memcpy(&(destination->id), (uint8_t*)(source) + ID_OFFSET, ID_SIZE);
-    memcpy(&(destination->username), (uint8_t*)(source) + USERNAME_OFFSET, USERNAME_SIZE);
-    memcpy(&(destination->email), (uint8_t*)(source) + EMAIL_OFFSET, EMAIL_SIZE);
-}
+static PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement);
+static PrepareResult prepare_select(InputBuffer* input_buffer, Statement* statement);
+static PrepareResult prepare_delete(InputBuffer* input_buffer, Statement* statement);
 
-Table* new_table(void)
-{
-    Table* table = malloc(sizeof(Table));
-    if (!table)
-    {
-        perror("Malloc failed");
-        exit(EXIT_FAILURE);
-    }
+static ExecuteResult execute_insert(Statement* statement, Table* table);
+static ExecuteResult execute_select(Statement* statement, Table* table);
+static ExecuteResult execute_delete(Statement* statement, Table* table);
 
-    table->num_rows = 0;
-    for (uint32_t i = 0; i < TABLE_MAX_PAGES; ++i)
-        table->pages[i] = NULL;
+static bool is_valid_row(void* row);
+static void print_row(Row* row);
 
-    return table;
-}
-
-void free_table(Table* table)
-{
-    for (uint32_t i = 0; i < TABLE_MAX_PAGES; ++i)
-        if (table->pages[i] != NULL)
-            free(table->pages[i]);
-    free(table);
-}
-
-void* row_slot(Table* table, uint32_t row_num)
-{
-    uint32_t page_num = row_num / ROWS_PER_PAGE;
-    void* page = table->pages[page_num];
-    if (!page)
-    {
-        page = table->pages[page_num] = malloc(PAGE_SIZE);
-        if (!page)
-        {
-            perror("Malloc failed");
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    uint32_t row_offset = row_num % ROWS_PER_PAGE;
-    uint32_t byte_offset = row_offset * ROW_SIZE;
-    return (uint8_t*)(page)+byte_offset;
-}
-
-static void print_row(Row* row)
-{
-    printf("(%d, %s, %s)\n", row->id, row->username, row->email);
-}
 
 MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table)
 {
@@ -77,37 +28,26 @@ MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table)
         free_table(table);
         exit(EXIT_SUCCESS);
     }
-    else
-    {
-        return META_COMMAND_UNRECOGNIZED_COMMAND;
-    }
+    return META_COMMAND_UNRECOGNIZED_COMMAND;
 }
-
-static PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement);
-static PrepareResult prepare_delete(InputBuffer* input_buffer, Statement* statement);
 
 PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
 {
     if (strncmp(input_buffer->buffer, "insert", 6) == 0)
-    {
         return prepare_insert(input_buffer, statement);
-    }
+
     if (strcmp(input_buffer->buffer, "select") == 0)
-    {
-        statement->type = STATEMENT_SELECT;
-        return PREPARE_SUCCESS;
-    }
+        return prepare_select(input_buffer, statement);
+
     if (strncmp(input_buffer->buffer, "delete", 6) == 0)
-    {
         return prepare_delete(input_buffer, statement);
-    }
 
     return PREPARE_UNRECOGNIZED_STATEMENT;
 }
 
 static PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement)
 {
-    char* keyword = strtok(input_buffer->buffer, " ");
+    strtok(input_buffer->buffer, " ");
     char* id_string = strtok(NULL, " ");
     char* username = strtok(NULL, " ");
     char* email = strtok(NULL, " ");
@@ -119,11 +59,10 @@ static PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statem
 
     if (id < 0)
         return PREPARE_NEGATIVE_ID;
-    if (strlen(username) > COLUMN_USERNAME_SIZE)
+    
+    if (strlen(username) > COLUMN_USERNAME_SIZE || strlen(email) > COLUMN_EMAIL_SIZE)
         return PREPARE_STRING_TOO_LONG;
-    if (strlen(email) > COLUMN_EMAIL_SIZE)
-        return PREPARE_STRING_TOO_LONG;
-
+    
     statement->type = STATEMENT_INSERT;
     statement->row_to_insert.id = id;
     strcpy(statement->row_to_insert.username, username);
@@ -132,9 +71,15 @@ static PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statem
     return PREPARE_SUCCESS;
 }
 
+static PrepareResult prepare_select(InputBuffer* input_buffer, Statement* statement)
+{
+    statement->type = STATEMENT_SELECT;
+    return PREPARE_SUCCESS;
+}
+
 static PrepareResult prepare_delete(InputBuffer* input_buffer, Statement* statement)
 {
-    char* keyword = strtok(input_buffer->buffer, " ");
+    strtok(input_buffer->buffer, " ");
     char* id_string = strtok(NULL, " ");
 
     if (!id_string)
@@ -161,28 +106,20 @@ ExecuteResult execute_statement(Statement* statement, Table* table)
     case STATEMENT_DELETE:
         return execute_delete(statement, table);
     }
-
     return 0;
 }
 
-ExecuteResult execute_insert(Statement* statement, Table* table)
+static ExecuteResult execute_insert(Statement* statement, Table* table)
 {
     if (table->num_rows >= TABLE_MAX_ROWS)
         return EXECUTE_TABLE_FULL;
 
-    Row* row_to_insert = &(statement->row_to_insert);
-    serialize_row(row_to_insert, row_slot(table, table->num_rows));
+    serialize_row(&(statement->row_to_insert), row_slot(table, table->num_rows));
     table->num_rows++;
     return EXECUTE_SUCCESS;
 }
 
-static bool is_valid_row(void* row)
-{
-    static const char test_block[ROW_SIZE] = {0};
-    return memcmp(test_block, row, ROW_SIZE);
-}
-
-ExecuteResult execute_select(Statement* statement, Table* table)
+static ExecuteResult execute_select(Statement* statement, Table* table)
 {
     Row row;
     for (uint32_t i = 0; i < table->num_rows; ++i)
@@ -196,7 +133,7 @@ ExecuteResult execute_select(Statement* statement, Table* table)
     return EXECUTE_SUCCESS;
 }
 
-ExecuteResult execute_delete(Statement* statement, Table* table)
+static ExecuteResult execute_delete(Statement* statement, Table* table)
 {
     Row row;
     for (uint32_t i = 0; i < table->num_rows; ++i)
@@ -209,4 +146,15 @@ ExecuteResult execute_delete(Statement* statement, Table* table)
         }
     }
     return EXECUTE_ID_NOT_FOUND;
+}
+
+static bool is_valid_row(void* row)
+{
+    static const char test_block[ROW_SIZE] = {0};
+    return memcmp(test_block, row, ROW_SIZE);
+}
+
+static void print_row(Row* row)
+{
+    printf("(%d, %s, %s)", row->id, row->username, row->email);
 }

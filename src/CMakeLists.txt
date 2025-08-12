@@ -2,6 +2,7 @@ set(SOURCES
     "input.c"
     "getline.c"
     "parser.c"
+    "table.c"
 )
 
 add_library(db_core STATIC ${SOURCES})
