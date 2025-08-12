@@ -40,10 +40,10 @@ static InputBuffer* create_input_buffer_with_data(const char* data)
 
 static void handles_unrecognized_meta_command(void)
 {
-    Table* table = new_table();
+    Table* table = db_open(_placeholder_);
     InputBuffer* input_buffer = create_input_buffer_with_data(".");
     TEST_ASSERT_EQUAL_INT(META_COMMAND_UNRECOGNIZED_COMMAND, do_meta_command(input_buffer, table));
-    free_table(table);
+    db_close(table);
     free_input_buffer(input_buffer);
 }
 
@@ -77,7 +77,7 @@ static void handles_insert_command(void)
     TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_statement(&insert_statement2, table));
     TEST_ASSERT_EQUAL_INT(2, table->num_rows);
     
-    free_table(table);
+    db_close(table);
 }
 
 static void handles_select_command(void)
@@ -86,7 +86,7 @@ static void handles_select_command(void)
     Statement statement = {0};
     statement.type = STATEMENT_SELECT;
     TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_statement(&statement, table));
-    free_table(table);
+    db_close(table);
 }
 
 static void handles_delete_command(void)
@@ -108,7 +108,7 @@ static void handles_delete_command(void)
     TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_statement(&delete_statement, table));
     TEST_ASSERT_EQUAL_INT(0, memcmp(test_block, row_slot(table, 0), ROW_SIZE));
 
-    free_table(table);
+    db_close(table);
 }
 
 static void handles_valid_insert_input(void)
@@ -157,7 +157,7 @@ static void handles_maximum_insert_input_sizes(void)
     TEST_ASSERT_EQUAL_INT(COLUMN_USERNAME_SIZE, strlen(row.username));
     TEST_ASSERT_EQUAL_INT(COLUMN_EMAIL_SIZE, strlen(row.email));
     
-    free_table(table);
+    db_close(table);
 }
 
 static void handles_missing_id_in_insert_input(void)
@@ -234,7 +234,7 @@ static void handles_invalid_id_in_delete_command(void)
     statement.id_to_delete = 1;
 
     TEST_ASSERT_EQUAL_INT(EXECUTE_ID_NOT_FOUND, execute_statement(&statement, table));
-    free_table(table);
+    db_close(table);
 }
 
 static ExecuteResult insert_row(Table* table, int n)
@@ -257,7 +257,7 @@ static void handles_inserting_when_table_is_full(void)
     TEST_ASSERT_EQUAL_INT(EXECUTE_TABLE_FULL, insert_row(table, TABLE_MAX_ROWS + 1));
     TEST_ASSERT_EQUAL_INT(TABLE_MAX_ROWS, table->num_rows);
 
-    free_table(table);
+    db_close(table);
 }
 
 int main(void)

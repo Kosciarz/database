@@ -12,9 +12,16 @@ static void print_prompt(void)
     printf("database> ");
 }
 
-int main(void)
+int main(int argc, const char* argv[])
 {
-    Table* table = new_table();
+    if (argc < 2)
+    {
+        printf("Must supply a database filename.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    const char* filename = argv[1];
+    Table* table = db_open(filename);
     InputBuffer* input_buffer = new_input_buffer();
 
     while (true)
@@ -66,4 +73,6 @@ int main(void)
             break;
         }
     }
+
+    return 0;
 }

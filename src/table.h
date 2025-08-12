@@ -2,21 +2,11 @@
 #define TABLE_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
-
-typedef struct
-{
-	uint32_t id;
-	char username[COLUMN_USERNAME_SIZE + 1];
-	char email[COLUMN_EMAIL_SIZE + 1];
-} Row;
-
-void serialize_row(Row* source, void* destination);
-void deserialize_row(void* source, Row* destination);
-
 
 #define SIZE_OF_ATTRIBUTE(struct, attribute) sizeof(((struct*)0)->attribute)
 
@@ -36,12 +26,35 @@ void deserialize_row(void* source, Row* destination);
 
 typedef struct
 {
+	uint32_t id;
+	char username[COLUMN_USERNAME_SIZE + 1];
+	char email[COLUMN_EMAIL_SIZE + 1];
+} Row;
+
+void serialize_row(Row* source, void* destination);
+void deserialize_row(void* source, Row* destination);
+
+
+typedef struct
+{
+	FILE* file_ptr;
+	uint32_t file_length;
+	void* pages[TABLE_MAX_ROWS];
+} Pager;
+
+Pager* pager_open(const char* filename);
+void* get_page(Pager* pager, uint32_t page_num);
+void pager_flush(Pager* pager, uint32_t page_num, uint32_t size);
+
+
+typedef struct
+{
 	uint32_t num_rows;
-	void* pages[TABLE_MAX_PAGES];
+	Pager* pager;
 } Table;
 
-Table* new_table(void);
-void free_table(Table* table);
+Table* db_open(const char* filename);
+void db_close(Table* table);
 void* row_slot(Table* table, uint32_t row_num);
 
 
