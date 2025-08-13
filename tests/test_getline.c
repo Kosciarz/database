@@ -49,6 +49,7 @@ static void test_reads_line_from_stream(void)
         fprintf(stderr, "GetTempFileNameA failed\n");
         exit(EXIT_FAILURE);
     }
+#endif
 
     FILE* temp_file = fopen(temp_file_name, "w+");
     if (!temp_file)
@@ -71,7 +72,6 @@ static void test_reads_line_from_stream(void)
 
     fclose(temp_file);
     remove(temp_file_name);
-#endif
 }
 
 int main(void)
