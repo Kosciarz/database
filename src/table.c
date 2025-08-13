@@ -23,11 +23,15 @@ void deserialize_row(void* source, Row* destination)
 
 Pager* pager_open(const char* filename)
 {
-	FILE* file_ptr = fopen(filename, "w+");
+	FILE* file_ptr = fopen(filename, "r+b");
 	if (!file_ptr)
 	{
-		perror("Failed to open file");
-		exit(EXIT_FAILURE);
+		file_ptr = fopen(filename, "w+b");
+		if (!file_ptr)
+		{
+			perror("fopen error");
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	fseek(file_ptr, 0, SEEK_END);

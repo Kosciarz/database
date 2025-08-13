@@ -156,5 +156,5 @@ static bool is_valid_row(void* row)
 
 static void print_row(Row* row)
 {
-    printf("(%d, %s, %s)", row->id, row->username, row->email);
+    printf("(%d, %s, %s)\n", row->id, row->username, row->email);
 }
