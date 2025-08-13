@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 #include <unity.h>
 
 #include "parser.h"
@@ -19,41 +23,26 @@ void tearDown(void)
 {
 }
 
-static Table* new_table(void)
+static Table* create_temp_table(void)
 {
-    Pager* pager = malloc(sizeof(Pager));
-    if (!pager)
+#ifdef _WIN32
+    char temp_path[MAX_PATH];
+    char temp_file_name[MAX_PATH];
+
+    if (!GetTempPathA(MAX_PATH, temp_path))
     {
-        perror("malloc error");
+        fprintf(stderr, "GetTempPathA failed\n");
         exit(EXIT_FAILURE);
     }
 
-    pager->file_ptr = NULL;
-    pager->file_length = 0;
-
-    for (uint32_t i = 0; i < TABLE_MAX_PAGES; ++i)
-        pager->pages[i] = NULL;
-
-    Table* table = malloc(sizeof(Table));
-    if (!table)
+    if (!GetTempFileNameA(temp_path, "tmpfile", 0, temp_file_name))
     {
-        perror("malloc error");
+        fprintf(stderr, "GetTempFileNameA failed\n");
         exit(EXIT_FAILURE);
     }
+#endif
 
-    table->pager = pager;
-    table->num_rows = 0;
-
-    return table;
-}
-
-static void free_table(Table* table)
-{
-    for (uint32_t i = 0; i < TABLE_MAX_PAGES; ++i)
-        if (table->pager->pages[i])
-            free(table->pager->pages[i]);
-    free(table->pager);
-    free(table);
+    return db_open(temp_file_name);
 }
 
 static InputBuffer* create_input_buffer_with_data(const char* data)
@@ -76,10 +65,10 @@ static InputBuffer* create_input_buffer_with_data(const char* data)
 
 static void handles_unrecognized_meta_command(void)
 {
-    Table* table = new_table();
+    Table* table = create_temp_table();
     InputBuffer* input_buffer = create_input_buffer_with_data(".");
     TEST_ASSERT_EQUAL_INT(META_COMMAND_UNRECOGNIZED_COMMAND, do_meta_command(input_buffer, table));
-    free_table(table);
+    db_close(table);
     free_input_buffer(input_buffer);
 }
 
@@ -93,16 +82,14 @@ static void handles_unrecognized_statement(void)
 
 static void handles_insert_command(void)
 {
-    Table* table = new_table();
+    Table* table = create_temp_table();
 
     Statement insert_statement1 = {0};
     insert_statement1.type = STATEMENT_INSERT;
     insert_statement1.row_to_insert.id = 1;
     strcpy(insert_statement1.row_to_insert.username, "person1");
     strcpy(insert_statement1.row_to_insert.email, "person1@example.com");
-   
 
-    //TEST_ASSERT_TRUE(0);
     TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_statement(&insert_statement1, table));
     TEST_ASSERT_EQUAL_INT(1, table->num_rows);
 
@@ -115,21 +102,21 @@ static void handles_insert_command(void)
     TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_statement(&insert_statement2, table));
     TEST_ASSERT_EQUAL_INT(2, table->num_rows);
     
-    free_table(table);
+    db_close(table);
 }
 
 static void handles_select_command(void)
 {
-    Table* table = new_table();
+    Table* table = create_temp_table();
     Statement statement = {0};
     statement.type = STATEMENT_SELECT;
     TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_statement(&statement, table));
-    free_table(table);
+    db_close(table);
 }
 
 static void handles_delete_command(void)
 {
-    Table* table = new_table();
+    Table* table = create_temp_table();
 
     Statement insert_statement = {0};
     insert_statement.type = STATEMENT_INSERT;
@@ -146,7 +133,7 @@ static void handles_delete_command(void)
     TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_statement(&delete_statement, table));
     TEST_ASSERT_EQUAL_INT(0, memcmp(test_block, row_slot(table, 0), ROW_SIZE));
 
-    free_table(table);
+    db_close(table);
 }
 
 static void handles_valid_insert_input(void)
@@ -157,6 +144,7 @@ static void handles_valid_insert_input(void)
     TEST_ASSERT_EQUAL_INT(STATEMENT_INSERT, statement.type);
     free_input_buffer(input_buffer1);
 }
+
 
 static void handles_valid_select_input(void)
 {
@@ -178,7 +166,7 @@ static void handles_valid_delete_input(void)
 
 static void handles_maximum_insert_input_sizes(void)
 {
-    Table* table = new_table();
+    Table* table = create_temp_table();
 
     Statement insert_statement = {0};
     insert_statement.type = STATEMENT_INSERT;
@@ -195,7 +183,7 @@ static void handles_maximum_insert_input_sizes(void)
     TEST_ASSERT_EQUAL_INT(COLUMN_USERNAME_SIZE, strlen(row.username));
     TEST_ASSERT_EQUAL_INT(COLUMN_EMAIL_SIZE, strlen(row.email));
     
-    free_table(table);
+    db_close(table);
 }
 
 static void handles_missing_id_in_insert_input(void)
@@ -266,13 +254,13 @@ static void handles_negative_id_in_delete_input(void)
 
 static void handles_invalid_id_in_delete_command(void)
 {
-    Table* table = new_table();
+    Table* table = create_temp_table();
     Statement statement = {0};
     statement.type = STATEMENT_DELETE;
     statement.id_to_delete = 1;
 
     TEST_ASSERT_EQUAL_INT(EXECUTE_ID_NOT_FOUND, execute_statement(&statement, table));
-    free_table(table);
+    db_close(table);
 }
 
 static ExecuteResult insert_row(Table* table, int n)
@@ -287,7 +275,7 @@ static ExecuteResult insert_row(Table* table, int n)
 
 static void handles_inserting_when_table_is_full(void)
 {
-    Table* table = new_table();
+    Table* table = create_temp_table();
 
     for (int i = 1; i <= TABLE_MAX_ROWS; ++i)
         insert_row(table, i);
@@ -295,7 +283,7 @@ static void handles_inserting_when_table_is_full(void)
     TEST_ASSERT_EQUAL_INT(EXECUTE_TABLE_FULL, insert_row(table, TABLE_MAX_ROWS + 1));
     TEST_ASSERT_EQUAL_INT(TABLE_MAX_ROWS, table->num_rows);
 
-    free_table(table);
+    db_close(table);
 }
 
 int main(void)
