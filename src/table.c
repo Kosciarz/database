@@ -35,6 +35,12 @@ Pager* pager_open(const char* filename)
 	rewind(file_ptr);
 
 	Pager* pager = malloc(sizeof(Pager));
+	if (!pager)
+	{
+		perror("malloc error");
+		exit(EXIT_FAILURE);
+	}
+
 	pager->file_ptr = file_ptr;
 	pager->file_length = file_length;
 
