@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 
 #define COLUMN_USERNAME_SIZE 32
@@ -55,7 +56,19 @@ typedef struct
 
 Table* db_open(const char* filename);
 void db_close(Table* table);
-void* row_slot(Table* table, uint32_t row_num);
+
+
+typedef struct
+{
+	Table* table;
+	uint32_t row_num;
+	bool end_of_table;
+} Cursor;
+
+Cursor* table_start(Table* table);
+Cursor* table_end(Table* table);
+void* cursor_value(Cursor* cursor);
+void cursor_advance(Cursor* cursor);
 
 
 #endif // TABLE_H

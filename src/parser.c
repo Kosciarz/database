@@ -114,37 +114,52 @@ static ExecuteResult execute_insert(Statement* statement, Table* table)
     if (table->num_rows >= TABLE_MAX_ROWS)
         return EXECUTE_TABLE_FULL;
 
-    serialize_row(&(statement->row_to_insert), row_slot(table, table->num_rows));
+    Cursor* cursor = table_end(table);
+    Row* row_to_insert = &(statement->row_to_insert);
+
+    serialize_row(row_to_insert, cursor_value(cursor));
     table->num_rows++;
+    free(cursor);
     return EXECUTE_SUCCESS;
 }
 
 static ExecuteResult execute_select(Statement* statement, Table* table)
 {
+    Cursor* cursor = table_start(table);
     Row row;
-    for (uint32_t i = 0; i < table->num_rows; ++i)
+
+    while (!cursor->end_of_table)
     {
-        if (is_valid_row(row_slot(table, i)))
+        deserialize_row(cursor_value(cursor), &row);
+        if (is_valid_row(&row))
         {
-            deserialize_row(row_slot(table, i), &row);
             print_row(&row);
         }
+        cursor_advance(cursor);
     }
+
+    free(cursor);
     return EXECUTE_SUCCESS;
 }
 
 static ExecuteResult execute_delete(Statement* statement, Table* table)
 {
+    Cursor* cursor = table_start(table);
     Row row;
-    for (uint32_t i = 0; i < table->num_rows; ++i)
+
+    while (!cursor->end_of_table)
     {
-        deserialize_row(row_slot(table, i), &row);
+        deserialize_row(cursor_value(cursor), &row);
         if (row.id == statement->id_to_delete)
         {
-            memset(row_slot(table, i), 0, ROW_SIZE);
+            memset(cursor_value(cursor), 0, ROW_SIZE);
+            free(cursor);
             return EXECUTE_SUCCESS;
         }
+        cursor_advance(cursor);
     }
+
+    free(cursor);
     return EXECUTE_ID_NOT_FOUND;
 }
 
