@@ -117,6 +117,7 @@ static void handles_select_command(void)
 static void handles_delete_command(void)
 {
     Table* table = create_temp_table();
+    Cursor* cursor = table_start(table);
 
     Statement insert_statement = {0};
     insert_statement.type = STATEMENT_INSERT;
@@ -131,8 +132,9 @@ static void handles_delete_command(void)
     static const char test_block[ROW_SIZE] = {0};
 
     TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_statement(&delete_statement, table));
-    TEST_ASSERT_EQUAL_INT(0, memcmp(test_block, row_slot(table, 0), ROW_SIZE));
+    TEST_ASSERT_EQUAL_INT(0, memcmp(test_block, cursor_value(cursor), ROW_SIZE));
 
+    free(cursor);
     db_close(table);
 }
 
@@ -167,6 +169,7 @@ static void handles_valid_delete_input(void)
 static void handles_maximum_insert_input_sizes(void)
 {
     Table* table = create_temp_table();
+    Cursor* cursor = table_end(table);
 
     Statement insert_statement = {0};
     insert_statement.type = STATEMENT_INSERT;
@@ -178,11 +181,12 @@ static void handles_maximum_insert_input_sizes(void)
     execute_statement(&insert_statement, table);
 
     Row row = {0};
-    deserialize_row(row_slot(table, 0), &row);
+    deserialize_row(cursor_value(cursor), &row);
 
     TEST_ASSERT_EQUAL_INT(COLUMN_USERNAME_SIZE, strlen(row.username));
     TEST_ASSERT_EQUAL_INT(COLUMN_EMAIL_SIZE, strlen(row.email));
     
+    free(cursor);
     db_close(table);
 }
 
