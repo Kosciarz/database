@@ -1,0 +1,23 @@
+name: CMake Windows
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+    
+      - name: Configure CMake
+        run: cmake --preset debug
+
+      - name: Build
+        run: cmake --build build\debug
+
+      - name: Test
+        run: ctest --test-dir build\debug --verbose --output-on-failure
