@@ -9,3 +9,7 @@ add_test(NAME test_getline COMMAND test_getline)
 add_executable(test_parser "test_parser.c")
 target_link_libraries(test_parser PRIVATE unity db_core)
 add_test(NAME test_parser COMMAND test_parser)
+
+add_executable(test_meta_commands "test_meta_commands.c")
+target_link_libraries(test_meta_commands PRIVATE unity db_core)
+add_test(NAME test_meta_commands COMMAND test_meta_commands)

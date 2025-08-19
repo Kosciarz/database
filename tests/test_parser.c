@@ -31,13 +31,13 @@ static Table* create_temp_table(void)
 
     if (!GetTempPathA(MAX_PATH, temp_path))
     {
-        fprintf(stderr, "GetTempPathA failed\n");
+        fprintf(stderr, "GetTempPathA error\n");
         exit(EXIT_FAILURE);
     }
 
     if (!GetTempFileNameA(temp_path, "tmpfile", 0, temp_file_name))
     {
-        fprintf(stderr, "GetTempFileNameA failed\n");
+        fprintf(stderr, "GetTempFileNameA error\n");
         exit(EXIT_FAILURE);
     }
 #endif
@@ -52,7 +52,7 @@ static InputBuffer* create_input_buffer_with_data(const char* data)
     input_buffer->buffer = malloc(len + 1);
     if (!input_buffer->buffer)
     {
-        perror("Malloc failed");
+        perror("malloc error");
         exit(EXIT_FAILURE);
     }
 
@@ -61,15 +61,6 @@ static InputBuffer* create_input_buffer_with_data(const char* data)
     input_buffer->buffer_length = len + 1;
     input_buffer->input_length = len;
     return input_buffer;
-}
-
-static void handles_unrecognized_meta_command(void)
-{
-    Table* table = create_temp_table();
-    InputBuffer* input_buffer = create_input_buffer_with_data(".");
-    TEST_ASSERT_EQUAL_INT(META_COMMAND_UNRECOGNIZED_COMMAND, do_meta_command(input_buffer, table));
-    db_close(table);
-    free_input_buffer(input_buffer);
 }
 
 static void handles_unrecognized_statement(void)
@@ -91,7 +82,8 @@ static void handles_insert_command(void)
     strcpy(insert_statement1.row_to_insert.email, "person1@example.com");
 
     TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_statement(&insert_statement1, table));
-    TEST_ASSERT_EQUAL_INT(1, table->num_rows);
+    void* node = get_page(table->pager, table->root_page_num);
+    TEST_ASSERT_EQUAL_INT(1, *leaf_node_num_cells(node));
 
     Statement insert_statement2 = {0};
     insert_statement2.type = STATEMENT_INSERT;
@@ -100,8 +92,9 @@ static void handles_insert_command(void)
     strcpy(insert_statement2.row_to_insert.email, "person2@example.com");
 
     TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_statement(&insert_statement2, table));
-    TEST_ASSERT_EQUAL_INT(2, table->num_rows);
-    
+    node = get_page(table->pager, table->root_page_num);
+    TEST_ASSERT_EQUAL_INT(2, *leaf_node_num_cells(node));
+
     db_close(table);
 }
 
@@ -281,11 +274,12 @@ static void handles_inserting_when_table_is_full(void)
 {
     Table* table = create_temp_table();
 
-    for (int i = 1; i <= TABLE_MAX_ROWS; ++i)
+    for (int i = 1; i <= LEAF_NODE_MAX_CELLS; ++i)
         insert_row(table, i);
 
-    TEST_ASSERT_EQUAL_INT(EXECUTE_TABLE_FULL, insert_row(table, TABLE_MAX_ROWS + 1));
-    TEST_ASSERT_EQUAL_INT(TABLE_MAX_ROWS, table->num_rows);
+    TEST_ASSERT_EQUAL_INT(EXECUTE_TABLE_FULL, insert_row(table, LEAF_NODE_MAX_CELLS + 1));
+    void* node = get_page(table->pager, table->root_page_num);
+    TEST_ASSERT_EQUAL_INT(LEAF_NODE_MAX_CELLS, *leaf_node_num_cells(node));
 
     db_close(table);
 }
@@ -293,8 +287,6 @@ static void handles_inserting_when_table_is_full(void)
 int main(void)
 {
     UNITY_BEGIN();
-    RUN_TEST(handles_unrecognized_meta_command);
-
     RUN_TEST(handles_unrecognized_statement);
     RUN_TEST(handles_insert_command);
     RUN_TEST(handles_select_command);

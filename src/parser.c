@@ -8,6 +8,9 @@
 #include "input.h"
 
 
+static void print_constants(void);
+static void print_leaf_node(void* node);
+
 static PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement);
 static PrepareResult prepare_select(InputBuffer* input_buffer, Statement* statement);
 static PrepareResult prepare_delete(InputBuffer* input_buffer, Statement* statement);
@@ -27,6 +30,18 @@ MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table)
         free_input_buffer(input_buffer);
         db_close(table);
         exit(EXIT_SUCCESS);
+    }
+    if (strcmp(input_buffer->buffer, ".constants") == 0)
+    {
+        printf("Constants:\n");
+        print_constants();
+        return META_COMMAND_SUCCESS;
+    }
+    if (strcmp(input_buffer->buffer, ".btree") == 0)
+    {
+        printf("Tree:\n");
+        print_leaf_node(get_page(table->pager, 0));
+        return META_COMMAND_SUCCESS;
     }
     return META_COMMAND_UNRECOGNIZED_COMMAND;
 }
@@ -171,4 +186,26 @@ static bool is_valid_row(void* row)
 static void print_row(Row* row)
 {
     printf("(%d, %s, %s)\n", row->id, row->username, row->email);
+}
+
+static void print_constants(void)
+{
+    printf("ROW_SIZE: %lld\n", ROW_SIZE);
+    printf("COMMON_NODE_HEADER_SIZE: %lld\n", COMMON_NODE_HEADER_SIZE);
+    printf("LEAF_NODE_HEADER_SIZE: %lld\n", LEAF_NODE_HEADER_SIZE);
+    printf("LEAF_NODE_CELL_SIZE: %lld\n", LEAF_NODE_CELL_SIZE);
+    printf("LEAF_NODE_SPACE_FOR_CELLS: %lld\n", LEAF_NODE_SPACE_FOR_CELLS);
+    printf("LEAF_NODE_MAX_CELLS: %lld\n", LEAF_NODE_MAX_CELLS);
+}
+
+static void print_leaf_node(void* node)
+{
+    uint32_t num_cells = *leaf_node_num_cells(node);
+
+    printf("leaf (size %u)\n", num_cells);
+    for (uint32_t i = 0; i < num_cells; ++i)
+    {
+        uint32_t key = *leaf_node_key(node, i);
+        printf("  - %u : %u\n", i, key);
+    }
 }

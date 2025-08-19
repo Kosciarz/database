@@ -127,7 +127,6 @@ void pager_flush(Pager* pager, uint32_t page_num)
 Table* db_open(const char* filename)
 {
 	Pager* pager = pager_open(filename);
-
 	Table* table = malloc(sizeof(Table));
 	if (!table)
 	{
@@ -140,7 +139,6 @@ Table* db_open(const char* filename)
 
 	if (pager->num_pages == 0)
 	{
-	    // New database file. Initialize page 0 as leaf node.
 		void* root_node = get_page(pager, 0);
 		initialize_leaf_node(root_node);
 	}
@@ -234,13 +232,13 @@ void cursor_advance(Cursor* cursor)
 	void* node = get_page(cursor->table->pager, cursor->page_num);
 	cursor->cell_num++;
 
-	if (cursor->cell_num >= (*leaf_node_num_cells(node)))
+	if (cursor->cell_num >= *leaf_node_num_cells(node))
 		cursor->end_of_table = true;
 }
 
 uint32_t* leaf_node_num_cells(void* node)
 {
-	return (uint32_t*)node + LEAF_NODE_NUM_CELLS_OFFSET;
+	return (uint32_t*)((uint8_t*)node + LEAF_NODE_NUM_CELLS_OFFSET);
 }
 
 void* leaf_node_cell(void* node, uint32_t cell_num)
@@ -260,7 +258,7 @@ void* leaf_node_value(void* node, uint32_t cell_num)
 
 void initialize_leaf_node(void* node)
 {
-	*(leaf_node_num_cells(node)) = 0;
+	*leaf_node_num_cells(node) = 0;
 }
 
 void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value)
@@ -278,7 +276,7 @@ void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value)
 		for (uint32_t i = num_cells; i > cursor->cell_num; --i)
 			memcpy(leaf_node_cell(node, i), leaf_node_cell(node, i - 1), LEAF_NODE_CELL_SIZE);
 
-	*(leaf_node_num_cells(node)) += 1;
-	*(leaf_node_key(node, cursor->cell_num)) = key;
+	*leaf_node_num_cells(node) += 1;
+	*leaf_node_key(node, cursor->cell_num) = key;
 	serialize_row(value, leaf_node_value(node, cursor->cell_num));
 }
