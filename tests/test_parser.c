@@ -63,6 +63,17 @@ static InputBuffer* create_input_buffer_with_data(const char* data)
     return input_buffer;
 }
 
+static Statement create_insert_statement(uint32_t id, const char* username, const char* email)
+{
+    Statement statement = {0};
+    statement.type = STATEMENT_INSERT;
+    statement.row_to_insert.id = id;
+    strcpy(statement.row_to_insert.username, username);
+    strcpy(statement.row_to_insert.email, email);
+    return statement;
+}
+
+
 static void handles_unrecognized_statement(void)
 {
     Statement statement = {0};
@@ -75,21 +86,13 @@ static void handles_insert_command(void)
 {
     Table* table = create_temp_table();
 
-    Statement insert_statement1 = {0};
-    insert_statement1.type = STATEMENT_INSERT;
-    insert_statement1.row_to_insert.id = 1;
-    strcpy(insert_statement1.row_to_insert.username, "person1");
-    strcpy(insert_statement1.row_to_insert.email, "person1@example.com");
-
+    Statement insert_statement1 = create_insert_statement(1, "foo", "foo@example.com");
+    
     TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_statement(&insert_statement1, table));
     void* node = get_page(table->pager, table->root_page_num);
     TEST_ASSERT_EQUAL_INT(1, *leaf_node_num_cells(node));
 
-    Statement insert_statement2 = {0};
-    insert_statement2.type = STATEMENT_INSERT;
-    insert_statement2.row_to_insert.id = 2;
-    strcpy(insert_statement2.row_to_insert.username, "person2");
-    strcpy(insert_statement2.row_to_insert.email, "person2@example.com");
+    Statement insert_statement2 = create_insert_statement(2, "bar", "bar@example.com");
 
     TEST_ASSERT_EQUAL_INT(EXECUTE_SUCCESS, execute_statement(&insert_statement2, table));
     node = get_page(table->pager, table->root_page_num);
@@ -162,7 +165,7 @@ static void handles_valid_delete_input(void)
 static void handles_maximum_insert_input_sizes(void)
 {
     Table* table = create_temp_table();
-    Cursor* cursor = table_end(table);
+    Cursor* cursor = table_start(table);
 
     Statement insert_statement = {0};
     insert_statement.type = STATEMENT_INSERT;
@@ -231,6 +234,19 @@ static void handles_invalid_insert_input_sizes(void)
     InputBuffer* input_buffer = create_input_buffer_with_data(input);
     TEST_ASSERT_EQUAL_INT(PREPARE_STRING_TOO_LONG, prepare_statement(input_buffer, &statement));
     free_input_buffer(input_buffer);
+}
+
+static void handles_duplicate_keys(void)
+{
+    Table* table = create_temp_table();
+    
+    Statement insert_statement1 = create_insert_statement(1, "foo", "foo@example.com");
+    execute_statement(&insert_statement1, table);
+    Statement insert_statement2 = create_insert_statement(1, "bar", "bar@example.com");
+    
+    TEST_ASSERT_EQUAL_INT(EXECUTE_DUPLICATE_KEY, execute_statement(&insert_statement2, table));
+
+    db_close(table);
 }
 
 static void handles_missing_id_in_delete_input(void)
@@ -302,6 +318,7 @@ int main(void)
     RUN_TEST(handles_negative_id_in_insert_input);
     RUN_TEST(handles_maximum_insert_input_sizes);
     RUN_TEST(handles_invalid_insert_input_sizes);
+    RUN_TEST(handles_duplicate_keys);
 
     RUN_TEST(handles_missing_id_in_delete_input);
     RUN_TEST(handles_negative_id_in_delete_input);

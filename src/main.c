@@ -58,6 +58,9 @@ int main(void)
         case EXECUTE_SUCCESS:
             printf("Executed.\n");
             break;
+        case EXECUTE_DUPLICATE_KEY:
+            printf("Error: Duplicate key.\n");
+            break;
         case EXECUTE_TABLE_FULL:
             fprintf(stderr, "Error: Table full.\n");
             break;

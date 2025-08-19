@@ -46,7 +46,8 @@ typedef enum
 {
     EXECUTE_SUCCESS,
     EXECUTE_TABLE_FULL,
-    EXECUTE_ID_NOT_FOUND
+    EXECUTE_ID_NOT_FOUND,
+    EXECUTE_DUPLICATE_KEY
 } ExecuteResult;
 
 ExecuteResult execute_statement(Statement* statement, Table* table);
