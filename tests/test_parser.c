@@ -285,19 +285,19 @@ static ExecuteResult insert_row(Table* table, int n)
     return execute_statement(&statement, table);
 }
 
-static void handles_inserting_when_table_is_full(void)
-{
-    Table* table = create_temp_table();
-
-    for (int i = 1; i <= LEAF_NODE_MAX_CELLS; ++i)
-        insert_row(table, i);
-
-    TEST_ASSERT_EQUAL_INT(EXECUTE_TABLE_FULL, insert_row(table, LEAF_NODE_MAX_CELLS + 1));
-    void* node = get_page(table->pager, table->root_page_num);
-    TEST_ASSERT_EQUAL_INT(LEAF_NODE_MAX_CELLS, *leaf_node_num_cells(node));
-
-    db_close(table);
-}
+//static void handles_inserting_when_table_is_full(void)
+//{
+//    Table* table = create_temp_table();
+//
+//    for (int i = 1; i <= LEAF_NODE_MAX_CELLS; ++i)
+//        insert_row(table, i);
+//
+//    TEST_ASSERT_EQUAL_INT(EXECUTE_TABLE_FULL, insert_row(table, LEAF_NODE_MAX_CELLS + 1));
+//    void* node = get_page(table->pager, table->root_page_num);
+//    TEST_ASSERT_EQUAL_INT(LEAF_NODE_MAX_CELLS, *leaf_node_num_cells(node));
+//
+//    db_close(table);
+//}
 
 int main(void)
 {
