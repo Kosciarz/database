@@ -1,6 +1,9 @@
 import subprocess, sys
 
 
+path = f"{sys.argv[1]}"
+print(path)
+
 input = '''
 insert 1 1 1\n
 insert 2 1 1\n
@@ -20,7 +23,7 @@ insert 14 1 1\n
 '''
 
 process = subprocess.run(
-	["C:\\dev\\C\\database\\build\\debug\\src\\database.exe"],
+	[path],
 	input=input,
 	text=True,
 	capture_output=True

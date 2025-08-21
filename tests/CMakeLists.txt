@@ -15,4 +15,4 @@ target_link_libraries(test_meta_commands PRIVATE unity db_core)
 add_test(NAME test_meta_commands COMMAND test_meta_commands)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-add_test(NAME test_output COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/test_output.py ${CMAKE_CURRENT_BINARY_DIR}/src/database.exe)
+add_test(NAME test_output COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/test_output.py ${CMAKE_BINARY_DIR}/src/database.exe)
