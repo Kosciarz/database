@@ -275,30 +275,6 @@ static void handles_invalid_id_in_delete_command(void)
     db_close(table);
 }
 
-static ExecuteResult insert_row(Table* table, int n)
-{
-    Statement statement = {0};
-    statement.type = STATEMENT_INSERT;
-    statement.row_to_insert.id = n;
-    snprintf(statement.row_to_insert.username, sizeof(statement.row_to_insert.username), "person%d", n);
-    snprintf(statement.row_to_insert.email, sizeof(statement.row_to_insert.email), "person%d@example.com", n);
-    return execute_statement(&statement, table);
-}
-
-//static void handles_inserting_when_table_is_full(void)
-//{
-//    Table* table = create_temp_table();
-//
-//    for (int i = 1; i <= LEAF_NODE_MAX_CELLS; ++i)
-//        insert_row(table, i);
-//
-//    TEST_ASSERT_EQUAL_INT(EXECUTE_TABLE_FULL, insert_row(table, LEAF_NODE_MAX_CELLS + 1));
-//    void* node = get_page(table->pager, table->root_page_num);
-//    TEST_ASSERT_EQUAL_INT(LEAF_NODE_MAX_CELLS, *leaf_node_num_cells(node));
-//
-//    db_close(table);
-//}
-
 int main(void)
 {
     UNITY_BEGIN();
@@ -322,7 +298,5 @@ int main(void)
     RUN_TEST(handles_missing_id_in_delete_input);
     RUN_TEST(handles_negative_id_in_delete_input);
     RUN_TEST(handles_invalid_id_in_delete_command);
-
-    //RUN_TEST(handles_inserting_when_table_is_full);
     return UNITY_END();
 }

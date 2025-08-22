@@ -12,9 +12,17 @@ static void print_prompt(void)
     printf("database> ");
 }
 
-int main(void)
-{
-    Table* table = db_open(TABLE_FILE);
+int main(int argc, char* argv[])
+{   
+    char* file_name;
+    if (argc == 2)
+        file_name = argv[1];
+    else
+        file_name = TABLE_FILE;
+
+
+    printf("TABLE FILE NAME: %s\n", file_name);
+    Table* table = db_open(file_name);
     InputBuffer* input_buffer = new_input_buffer();
 
     while (true)
