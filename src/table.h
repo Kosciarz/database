@@ -94,7 +94,9 @@ typedef enum
 
 #define LEAF_NODE_NUM_CELLS_SIZE sizeof(uint32_t)
 #define LEAF_NODE_NUM_CELLS_OFFSET COMMON_NODE_HEADER_SIZE
-#define LEAF_NODE_HEADER_SIZE (COMMON_NODE_HEADER_SIZE + LEAF_NODE_NUM_CELLS_SIZE)
+#define LEAF_NODE_NEXT_LEAF_SIZE sizeof(uint32_t)
+#define LEAF_NODE_NEXT_LEAF_OFFSET (LEAF_NODE_NUM_CELLS_OFFSET + LEAF_NODE_NUM_CELLS_SIZE)
+#define LEAF_NODE_HEADER_SIZE (COMMON_NODE_HEADER_SIZE + LEAF_NODE_NUM_CELLS_SIZE + LEAF_NODE_NEXT_LEAF_SIZE)
 
 // Leaf Node Body Layout
 
@@ -137,6 +139,7 @@ uint8_t* leaf_node_num_cells(void* node);
 void* leaf_node_cell(void* node, uint32_t cell_num);
 uint32_t* leaf_node_key(void* node, uint32_t cell_num);
 void* leaf_node_value(void* node, uint32_t cell_num);
+uint32_t* leaf_node_next_leaf(void* node);
 
 void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value);
 void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value);

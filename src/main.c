@@ -21,7 +21,6 @@ int main(int argc, char* argv[])
         file_name = TABLE_FILE;
 
 
-    printf("TABLE FILE NAME: %s\n", file_name);
     Table* table = db_open(file_name);
     InputBuffer* input_buffer = new_input_buffer();
 
@@ -49,10 +48,10 @@ int main(int argc, char* argv[])
             break;
         case PREPARE_NEGATIVE_ID:
             fprintf(stderr, "Error: ID must be positive.\n");
-            break;
+            continue;
         case PREPARE_STRING_TOO_LONG:
             fprintf(stderr, "Error: String is too long.\n");
-            break;
+            continue;
         case PREPARE_SYNTAX_ERROR:
             fprintf(stderr, "Error: Could not parse statement.\n");
             continue;
@@ -73,7 +72,7 @@ int main(int argc, char* argv[])
             fprintf(stderr, "Error: Table full.\n");
             break;
         case EXECUTE_ID_NOT_FOUND:
-            fprintf(stderr, "Error: Row id %d not found.\n", statement.id_to_delete);
+            fprintf(stderr, "Error: ID %d not found.\n", statement.id_to_delete);
             break;
         }
     }

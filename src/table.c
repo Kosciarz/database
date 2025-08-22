@@ -189,21 +189,11 @@ void db_close(Table* table)
 
 Cursor* table_start(Table* table)
 {
-	Cursor* cursor = malloc(sizeof(Cursor));
-	if (!cursor)
-	{
-		perror("malloc error");
-		exit(EXIT_FAILURE);
-	}
-
-	cursor->table = table;
-	cursor->page_num = table->root_page_num;
-	cursor->cell_num = 0;
-
-	void* root_node = get_page(table->pager, table->root_page_num);
-	uint32_t num_cells = *leaf_node_num_cells(root_node);
+	Cursor* cursor = table_find(table, 0);
+	
+	void* node = get_page(table->pager, cursor->page_num);
+	uint8_t num_cells = *leaf_node_num_cells(node);
 	cursor->end_of_table = (num_cells == 0);
-
 	return cursor;
 }
 
@@ -228,7 +218,18 @@ void cursor_advance(Cursor* cursor)
 	cursor->cell_num++;
 
 	if (cursor->cell_num >= *leaf_node_num_cells(node))
-		cursor->end_of_table = true;
+	{
+		uint32_t next_page_num = *leaf_node_next_leaf(node);
+		if (next_page_num == 0)
+		{
+			cursor->end_of_table = true;
+		}
+		else
+		{
+			cursor->page_num = next_page_num;
+			cursor->cell_num = 0;
+		}
+	}
 }
 
 
@@ -282,6 +283,7 @@ void initialize_node(void* node, NodeType type)
 	{
 	case NODE_LEAF:
 		*leaf_node_num_cells(node) = 0;
+		*leaf_node_next_leaf(node) = 0;
 		break;
 	case NODE_INTERNAL:
 		*internal_node_num_keys(node) = 0;
@@ -310,6 +312,11 @@ void* leaf_node_value(void* node, uint32_t cell_num)
 	return (uint8_t*)leaf_node_cell(node, cell_num) + LEAF_NODE_KEY_SIZE;
 }
 
+uint32_t* leaf_node_next_leaf(void* node)
+{
+	return (uint32_t*)((uint8_t*)node + LEAF_NODE_NEXT_LEAF_OFFSET);
+}
+
 void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value)
 {
 	void* node = get_page(cursor->table->pager, cursor->page_num);
@@ -336,6 +343,8 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value)
 	uint32_t new_page_num = get_unused_page_num(cursor->table->pager);
 	void* new_node = get_page(cursor->table->pager, new_page_num);
 	initialize_node(new_node, NODE_LEAF);
+	*leaf_node_next_leaf(new_node) = *leaf_node_next_leaf(old_node);
+	*leaf_node_next_leaf(old_node) = new_page_num;
 
 	for (int32_t i = LEAF_NODE_MAX_CELLS; i >= 0; --i)
 	{
@@ -349,7 +358,10 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value)
 		void* destination = leaf_node_cell(destination_node, index_within_node);
 
 		if (i == cursor->cell_num)
-			serialize_row(value, destination);
+		{
+			serialize_row(value, leaf_node_value(destination_node, index_within_node));
+			*leaf_node_key(destination_node, index_within_node) = key;
+		}
 		if (i > cursor->cell_num)
 			memcpy(destination, leaf_node_cell(old_node, i - 1), LEAF_NODE_CELL_SIZE);
 		if (i < cursor->cell_num)
