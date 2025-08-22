@@ -124,6 +124,7 @@ typedef enum
 #define INTERNAL_NODE_KEY_SIZE sizeof(uint32_t)
 #define INTERNAL_NODE_CHILD_SIZE sizeof(uint32_t)
 #define INTERNAL_NODE_CELL_SIZE (INTERNAL_NODE_KEY_SIZE + INTERNAL_NODE_CHILD_SIZE)
+#define INTERNAL_NODE_MAX_CELLS 3
 
 
 NodeType get_node_type(void* node);
@@ -132,6 +133,7 @@ void set_node_type(void* node, NodeType type);
 void create_new_root(Table* table, uint32_t right_child_page_num);
 bool is_node_root(void* node);
 void set_node_root(void* node, bool value);
+uint32_t* node_parent(void* node);
 
 void initialize_node(void* node, NodeType type);
 
@@ -150,8 +152,11 @@ uint32_t* internal_node_right_child(void* node);
 uint32_t* internal_node_cell(void* node, uint32_t cell_num);
 uint32_t* internal_node_child(void* node, uint32_t child_num);
 uint32_t* internal_node_key(void* node, uint32_t key_num);
+void update_internal_node_key(void* node, uint32_t old_key, uint32_t new_key);
 
 Cursor* internal_node_find(Table* table, uint32_t page_num, uint32_t key);
+uint32_t internal_node_find_child(void* node, uint32_t key);
+void internal_node_insert(Table* table, uint32_t parent_page_num, uint32_t child_page_num);
 
 uint32_t get_node_max_key(void* node);
 
