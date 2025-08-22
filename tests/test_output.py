@@ -1,35 +1,28 @@
 import subprocess, sys
+import unittest
 
 
 path = f"{sys.argv[1]}"
-print(path)
 
-input = '''
-insert 1 1 1\n
-insert 2 1 1\n
-insert 3 1 1\n
-insert 4 1 1\n
-insert 5 1 1\n
-insert 6 1 1\n
-insert 7 1 1\n
-insert 8 1 1\n
-insert 9 1 1\n
-insert 10 1 1\n
-insert 11 1 1\n
-insert 12 1 1\n
-insert 13 1 1\n
-insert 14 1 1\n
+
+def extract_output(output: str):
+    start_index = output.find("Tree:")
+    end_index = output[start_index:].find(".")
+    return output[start_index:start_index + end_index + 1].strip()
+
+
+class TestOutput(unittest.TestCase):
+    def test_allows_printing_structure_3_leaf_btree(self):
+        global path
+        
+        input = ''.join([f"insert {i} user{i} user{i}@example.com\n" for i in range(1, 15)])
+        input += """
 .btree\n
-'''
+insert 15 user15 user15@example.com\n
+.exit\n"""
 
-process = subprocess.run(
-	[path],
-	input=input,
-	text=True,
-	capture_output=True
-)
-
-expected = '''Tree:
+        expected = """
+Tree:
 - internal (size 1)
   - leaf (size 7)
     - 1
@@ -47,20 +40,20 @@ expected = '''Tree:
     - 11
     - 12
     - 13
-    - 14'''
+    - 14
+database> database> Need to implement searching an internal node."""
 
+        
+        process = subprocess.run(
+            [path],
+	        input=input,
+	        text=True,
+	        capture_output=True
+        )
 
-def extract_output(output: str):
-    start_index = output.find("Tree:")
-    end_index = output[start_index:].find("database")
-    return output[start_index:start_index + end_index].strip()
+        self.assertEqual(expected.strip(), extract_output(process.stdout))
 
-extracted_ouput = extract_output(process.stdout)
+    
 
-if extracted_ouput == expected.strip():
-    print("Passed!")
-    sys.exit(0)
-else:
-	print("Expected:\n", expected)
-	print("Got:\n", extracted_ouput)
-	sys.exit(1)
+if __name__ == "__main__":
+    unittest.main(argv=[""], exit=False)
